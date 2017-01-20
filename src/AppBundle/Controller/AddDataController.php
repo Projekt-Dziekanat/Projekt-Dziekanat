@@ -48,7 +48,6 @@ class AddDataController extends Controller
             $addClass->setNumber($number);
             $addClass->setIsActive(1);
             $addClass->setIsAvailable($isAvailable);
-gi
 
             $em = $this->getDoctrine()->getManager();
             $em->persist($addClass);
