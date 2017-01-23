@@ -9,6 +9,7 @@
     <meta name="author" content="">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    {% block stylesheets %}{% endblock %}
 </head>
 
 <body>
@@ -38,7 +39,8 @@
                             <li><a href="{{ path('add_subject') }}">Subject</a></li>
                         </ul>
                     </div>
-                </li>
+                <li><a href="{{ path('show_root') }}">Show/edit</a></li>
+
                 <li><a href="#contact"></a></li>
             </ul>
         </div><!--/.nav-collapse -->
@@ -51,5 +53,6 @@
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script src="http://getbootstrap.com/dist/js/bootstrap.min.js"></script>
+{% block javascripts %}{% endblock %}
 </body>
 </html>

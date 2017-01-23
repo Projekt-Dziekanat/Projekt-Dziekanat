@@ -1,0 +1,258 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Plan zajęć{% endblock %}
+{% block body %}
+
+
+    {#<h1>Week Calendar Demo (JSON data source)</h1>#}
+
+    <p class="description">
+        Program umożliwia zobaczenie planu zajęć w wersji graficznej i ręcznego
+        wprowadzania korekt.
+        {#Please Note ***. This demo uses static json data. For this reason, in#}
+        {#order to see any event data, please edit events.json to use current dates.#}
+    </p>
+
+    <div id="calendar"></div>
+
+{% endblock %}
+
+{% block stylesheets %}
+    {#<link rel='stylesheet' type='text/css' href="{{ asset('css/jquery-ui-1.8.11.custom.css') }}" />#}
+    <link rel='stylesheet' type='text/css' href="{{ asset('show/css/jquery-ui.css') }}" />
+    <link rel='stylesheet' type='text/css' href="{{ asset('show/css/jquery.weekcalendar.css') }}" />
+    <style type='text/css'>
+        body {
+            font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+            margin: 0;
+        }
+
+        h1 {
+            margin: 0;
+            padding: 0.5em;
+        }
+
+        p.description {
+            font-size: 0.8em;
+            padding: 0 1em 1em;
+            margin: 0;
+        }
+
+        #message {
+            font-size: 0.7em;
+            position: absolute;
+            top: 1em;
+            right: 1em;
+            width: 350px;
+            display: none;
+            padding: 1em;
+            background: #ffc;
+            border: 1px solid #dda;
+            z-index: 1;
+        }
+        .wc-business-hours {
+            color: #333;
+            font-size: inherit;
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    <script type="text/javascript" src="{{ asset('show/js/jquery.min.js') }}"></script>
+    {#<script type="text/javascript" src="{{ asset('js/jquery-migrate.js') }}"></script>#}
+    <script type="text/javascript" src="{{ asset('show/js/jquery-ui.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('show/js/date.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('show/js/jquery.weekcalendar.js') }}"></script>
+    <script type="text/javascript">
+        /// jquery migrate
+        var matched, browser;
+
+        jQuery.uaMatch = function( ua ) {
+            ua = ua.toLowerCase();
+
+            var match = /(chrome)[ \/]([\w.]+)/.exec( ua ) ||
+                    /(webkit)[ \/]([\w.]+)/.exec( ua ) ||
+                    /(opera)(?:.*version|)[ \/]([\w.]+)/.exec( ua ) ||
+                    /(msie)[\s?]([\w.]+)/.exec( ua ) ||
+                    /(trident)(?:.*? rv:([\w.]+)|)/.exec( ua ) ||
+                    ua.indexOf("compatible") < 0 && /(mozilla)(?:.*? rv:([\w.]+)|)/.exec( ua ) ||
+                    [];
+
+            return {
+                browser: match[ 1 ] || "",
+                version: match[ 2 ] || "0"
+            };
+        };
+
+        matched = jQuery.uaMatch( navigator.userAgent );
+        //IE 11+ fix (Trident)
+        matched.browser = matched.browser == 'trident' ? 'msie' : matched.browser;
+        browser = {};
+
+        if ( matched.browser ) {
+            browser[ matched.browser ] = true;
+            browser.version = matched.version;
+        }
+
+        // Chrome is Webkit, but Webkit is also Safari.
+        if ( browser.chrome ) {
+            browser.webkit = true;
+        } else if ( browser.webkit ) {
+            browser.safari = true;
+        }
+
+        jQuery.browser = browser;
+        // log removed - adds an extra dependency
+        //log(jQuery.browser)
+
+        //==============================-
+
+        // First, checks if it isn't implemented yet.
+        if (!String.prototype.format) {
+            String.prototype.format = function() {
+                var args = arguments;
+                return this.replace(/{(\d+)}/g, function(match, number) {
+                    return typeof args[number] != 'undefined'
+                            ? args[number]
+                            : match
+                            ;
+                });
+            };
+        }
+
+        //===========================
+        /*
+         * date formatting is adapted from
+         * http://jacwright.com/projects/javascript/date_format
+         */
+//        _formatDate: function(date, format) {
+//            var returnStr = '';
+//            for (var i = 0; i < format.length; i++) {
+//                var curChar = format.charAt(i);
+//                if (i != 0 && format.charAt(i - 1) == '\\') {
+//                    returnStr += curChar;
+//                }
+//                else if (this._replaceChars[curChar]) {
+//                    returnStr += this._replaceChars[curChar](date, this);
+//                } else if (curChar != '\\') {
+//                    returnStr += curChar;
+//                }
+//            }
+//            return returnStr;
+//        };
+//
+//        _replaceChars: {
+//
+//            G: function(date) { return date.getHours(); },
+//            h: function(date) { return ((date.getHours() % 12 || 12) < 10 ? '0' : '') + (date.getHours() % 12 || 12); },
+//            H: function(date) { return (date.getHours() < 10 ? '0' : '') + date.getHours(); },
+//            i: function(date) { return (date.getMinutes() < 10 ? '0' : '') + date.getMinutes(); },
+//            s: function(date) { return (date.getSeconds() < 10 ? '0' : '') + date.getSeconds(); },
+//            u: function(date) { var m = date.getMilliseconds(); return (m < 10 ? '00' : (m < 100 ? '0' : '')) + m; },
+//            // Timezone
+//            e: function(date) { return 'Not Yet Supported'; },
+//            I: function(date) { return 'Not Yet Supported'; },
+//            O: function(date) { return (-date.getTimezoneOffset() < 0 ? '-' : '+') + (Math.abs(date.getTimezoneOffset() / 60) < 10 ? '0' : '') + (Math.abs(date.getTimezoneOffset() / 60)) + '00'; },
+//            P: function(date) { return (-date.getTimezoneOffset() < 0 ? '-' : '+') + (Math.abs(date.getTimezoneOffset() / 60) < 10 ? '0' : '') + (Math.abs(date.getTimezoneOffset() / 60)) + ':00'; }, // Fixed now
+//            T: function(date) { var m = date.getMonth(); date.setMonth(0); var result = date.toTimeString().replace(/^.+ \(?([^\)]+)\)?$/, '$1'); date.setMonth(m); return result;},
+//            Z: function(date) { return -date.getTimezoneOffset() * 60; },
+//            // Full Date/Time
+//            c: function(date, calendar) { return calendar._formatDate(date, 'Y-m-d\\TH:i:sP'); }, // Fixed now
+//            r: function(date, calendar) { return calendar._formatDate(date, 'D, d M Y H:i:s O'); },
+//            U: function(date) { return date.getTime() / 1000; }
+//        },
+
+        //===========================
+
+        var year = new Date().getFullYear();
+        var month = new Date().getMonth();
+        var day = new Date().getDate();
+
+
+
+
+        $(document).ready(function() {
+            $('#calendar').weekCalendar({
+//      data: 'events.json',
+                data: '{{ path("show_eventsjson") }}',
+                date: new Date('2007-01-01T8:00:00.000+01:00'),
+                minDate: new Date('2007-01-01T13:15:00.000+10:00'),
+                maxDate: new Date('2007-01-07T13:15:00.000+10:00'),
+//                switchDisplay: {'1 day': 1,'3 days': 3,'Work week': 5, 'Full week': 7},
+//                switchDisplay: {'Full week': 7},
+                timeslotsPerHour: 4,
+
+
+                //--------------------------
+                use24Hour: true,
+                timeFormat: null,
+                headerSeparator: '',
+                dateFormat: '',
+                firstDayOfWeek: 1,
+                // 0 = Sunday, 1 = Monday, 2 = Tuesday, ... , 6 = Saturday
+                businessHours: {start: 8, end: 16, limitDisplay: false},
+                timeslotHeight: 12,
+                buttons: false,
+                allowEventDelete: false,
+                allowCalEventOverlap: true,
+                overlapEventsSeparate: true,
+//                totalEventsWidthPercentInOneColumn: 100,
+                readonly: true,
+                allowEventCreation: false,
+
+                title: false,
+                //--------------------------
+
+                height: function($calendar) {
+                    return $(window).height() - $('h1').outerHeight() - $('.description').outerHeight();
+                },
+                eventRender: function(calEvent, $event) {
+                    if (calEvent.end.getTime() < new Date().getTime()) {
+                        $event.css('backgroundColor', '#aaa');
+                        $event.find('.time').css({
+                            backgroundColor: '#999',
+                            border:'1px solid #888'
+                        });
+                    }
+                },
+                eventNew: function(calEvent, $event) {
+                    displayMessage('<strong>Added event</strong><br/>Start: ' + calEvent.start + '<br/>End: ' + calEvent.end);
+                    alert('You\'ve added a new event. You would capture this event, add the logic for creating a new event with your own fields, data and whatever backend persistence you require.');
+                },
+                eventDrop: function(calEvent, $event) {
+                    displayMessage('<strong>Moved Event</strong><br/>Start: ' + calEvent.start + '<br/>End: ' + calEvent.end);
+                },
+                eventResize: function(calEvent, $event) {
+                    displayMessage('<strong>Resized Event</strong><br/>Start: ' + calEvent.start + '<br/>End: ' + calEvent.end);
+                },
+                eventClick: function(calEvent, $event) {
+                    //displayMessage('<strong>'+calEvent.title+'</strong><br/>ID: ' + calEvent.id + '<br/>Start: ' + calEvent.start.getHours() + '<br/>End: ' + calEvent.end);
+//                    displayMessage('<strong>'+calEvent.title+'</strong><br/>ID: ' + calEvent.id + '<br/>Start: ' + calEvent.start.getHours() + '<br/>End: ' + calEvent.end);
+                    displayMessage("<strong>{0}</strong><br/>ID: {1}<br/>Start: {2}<br/>End: {3}".format(calEvent.title, calEvent.id,  calEvent.start, calEvent.end));
+                },
+//                eventMouseover: function(calEvent, $event) {
+//                    displayMessage('<strong>Mouseover Event</strong><br/>Start: ' + calEvent.start + '<br/>End: ' + calEvent.end);
+//                },
+//                eventMouseout: function(calEvent, $event) {
+//                    displayMessage('<strong>Mouseout Event</strong><br/>Start: ' + calEvent.start + '<br/>End: ' + calEvent.end);
+//                },
+//                noEvents: function() {
+//                    displayMessage('There are no events for this week');
+//                },
+                reachedmindate: function($calendar, date) {
+                    displayMessage('You reached mindate');
+                },
+                reachedmaxdate: function($calendar, date) {
+                    displayMessage('You cannot go further');
+                }
+            });
+
+            function displayMessage(message) {
+                $('#message').html(message).fadeIn();
+            }
+
+            $('<div id="message" class="ui-corner-all"></div>').prependTo($('body'));
+        });
+
+    </script>
+{% endblock %}
