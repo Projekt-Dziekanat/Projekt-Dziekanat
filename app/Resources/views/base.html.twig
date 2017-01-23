@@ -23,19 +23,19 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/">Better than Wirtualny Dziekanat ..</a>
+            <a class="navbar-brand" href="{{ path('list_all') }}">Better than Wirtualny Dziekanat ..</a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
-                <li><a href="/">List All</a></li>
+                <li><a href="{{ path('list_all') }}">List All</a></li>
                 <li>
                     <div class="dropdown">
                         <div class="dropdown-toggle dropdown-style" data-toggle="dropdown" style=" color: #9d9d9d;padding-top:15px;padding-left:15px;cursor: pointer;">Add ..<span
                                     class="caret"></span></div>
                         <ul class="nav navbar-nav dropdown-menu">
-                            <li><a href="/add_lecturer">Lecturer</a></li>
-                            <li><a href="/add_class">Class</a></li>
-                            <li><a href="/add_subject">Subject</a></li>
+                            <li><a href="{{ path('add_lecturer') }}">Lecturer</a></li>
+                            <li><a href="{{ path('add_class') }}">Class</a></li>
+                            <li><a href="{{ path('add_subject') }}">Subject</a></li>
                         </ul>
                     </div>
                 </li>
