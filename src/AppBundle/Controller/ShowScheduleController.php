@@ -9,13 +9,21 @@
 namespace AppBundle\Controller;
 
 
+use AppBundle\Entity\AddLecturer;
+use AppBundle\Entity\Timetable;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\TimeType;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Class ShowScheduleController
+ * https://github.com/robmonie/jquery-week-calendar/wiki
  * @package AppBundle\Controller
  * @Route("/show")
  */
@@ -125,13 +133,83 @@ class ShowScheduleController extends Controller {
 //        $this->redirectToRoute('');
         return $this->render('io/show_schedule.html.twig', ['slug' => $slug, 'id' => $id]);
     }
+
+    /**
+     * @Route("/edit/{id}", name="show_edit")
+     * @ Route("/{slug}/{id_}/edit/{id}", name="show_edit", requirements={"slug": "group|classroom|lecturer"})
+     */
+
+    public function editAction(Request $request, Timetable $timetable) {
+//        $slug = null;
+//        $id_ = null;
+        //http://intelligentbee.com/blog/2015/01/19/symfony-2-forms-and-ajax/
+
+        $form = $this->createFormBuilder($timetable, ['attr' => ['id' => 'editFormAjax']])
+            ->setAction($this->generateUrl('show_edit', ['id' => $timetable->getId()]))
+            ->add('addsubject', EntityType::class, ['label' => 'Subject', 'choice_label' => 'name', 'class' => 'AppBundle\Entity\AddSubject'])
+            ->add('addlecturer', EntityType::class, ['label' => 'Lecturer', 'choice_label' => function (AddLecturer $lecturer) {
+                return $lecturer->getFirstName()." ".$lecturer->getLastName();}, 'class' => 'AppBundle\Entity\AddLecturer'])
+            ->add('addgroup', EntityType::class, ['label' => 'Group', 'choice_label' => 'name', 'class' => 'AppBundle\Entity\AddGroup'])
+            ->add('addclass', EntityType::class, ['label' => 'Classroom', 'choice_label' => 'name', 'class' => 'AppBundle\Entity\AddClass'])
+
+            ->add('dayOfWeek', ChoiceType::class, array('choices'  => array(
+                'Monday' => 1,
+                'Tuesday' => 2,
+                'Wednesday' => 3,
+                'Thursday' => 4,
+                'Friday' => 5,
+                'Saturday' => 6,
+                'Sunday' => 7,),))
+
+            ->add('startTime', TimeType::class, array('input'  => 'datetime', 'widget' => 'choice', 'with_seconds' => false))
+            ->add('endTime', TimeType::class, array('input'  => 'datetime', 'widget' => 'choice', 'with_seconds' => false))
+
+
+            ->add('save', SubmitType::class, array('label' => 'Save', 'attr' => ['class' => 'btn-primary']))
+            ->getForm();
+
+
+        // handle Ajax
+        $form->handleRequest($request);
+
+        if ($request->isXmlHttpRequest() && $form->isValid()) {
+
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($timetable);
+            $em->flush();
+
+            //$this->addFlash('info', 'Edytowano rekord.');
+            return new JsonResponse(array('message' => 'Success!'), 200);
+
+//            return $this->redirectToRoute("software");
+        }
+
+        return $this->render('io/show_schedule_edit_modal.html.twig', array('form' => $form->createView()));//
+        //, 'slug' => $slug, 'id' => $id_));
+    }
+
+    /**
+     * @Route("/delete/{id}", name="show_delete")
+     */
+
+    public function deleteAction(Request $request, Timetable $timetable) {
+        // http://stackoverflow.com/questions/8982295/confirm-delete-modal-dialog-with-twitter-bootstrap
+        $em = $this->getDoctrine()->getManager();
+        $em->remove($timetable);
+        $em->flush();
+
+        return new JsonResponse(array('message' => 'Success!'), 200);
+    }
+
+
+
 }
-abstract class DaysOfWeek  {
-    const Sunday = 7;
-    const Monday = 1;
-    const Tuesday = 2;
-    const Wednesday = 3;
-    const Thursday = 4;
-    const Friday = 5;
-    const Saturday = 6;
-}
+//abstract class DaysOfWeek  {
+//    const Sunday = 7;
+//    const Monday = 1;
+//    const Tuesday = 2;
+//    const Wednesday = 3;
+//    const Thursday = 4;
+//    const Friday = 5;
+//    const Saturday = 6;
+//}

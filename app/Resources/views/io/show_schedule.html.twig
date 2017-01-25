@@ -3,8 +3,39 @@
 {% block title %}Plan zajęć{% endblock %}
 {% block body %}
 
+    {#<a data-toggle="modal" href="{{ path('show_edit', {'id': '16'}) }}" data-target="#editmodal" class="btn btn-default">click me</a>#}
 
-    {#<h1>Week Calendar Demo (JSON data source)</h1>#}
+    <div id="message" class="ui-corner-all">
+        <button id="messageCloseButton" type="button" class="close" >&times;</button>
+        <div id="messageData"></div>
+        <button id="editmodalbtnedit" data-toggle="modal" href="#" data-target="#editmodal" class="btn btn-default">Edit</button>
+        <button id="editmodalbtndelete" class="btn btn-default" data-href="#" data-toggle="modal" data-target="#confirm-delete">Delete</button>
+    </div>
+
+    <div  style="display: none;"  class="modal fade" id="editmodal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel"  aria-hidden="true"></div>
+
+    <div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="deleteModalLabel">Confirm Delete</h4>
+                </div>
+
+                <div class="modal-body" id="confirm-delete-modal-body">
+                    <p>Do you want to proceed?</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <a class="btn btn-danger btn-ok">Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h1>Preview/edit timetable</h1>
 
     <p class="description">
         Program umożliwia zobaczenie planu zajęć w wersji graficznej i ręcznego
@@ -39,7 +70,7 @@
         }
 
         #message {
-            font-size: 0.7em;
+            /*font-size: 0.7em;*/
             position: absolute;
             top: 1em;
             right: 1em;
@@ -58,7 +89,8 @@
 {% endblock %}
 
 {% block javascripts %}
-    <script type="text/javascript" src="{{ asset('show/js/jquery.min.js') }}"></script>
+    {% if slug is not null %}
+    {#<script type="text/javascript" src="{{ asset('show/js/jquery.min.js') }}"></script>#}
     {#<script type="text/javascript" src="{{ asset('js/jquery-migrate.js') }}"></script>#}
     <script type="text/javascript" src="{{ asset('show/js/jquery-ui.js') }}"></script>
     <script type="text/javascript" src="{{ asset('show/js/date.js') }}"></script>
@@ -164,11 +196,9 @@
 
         //===========================
 
-        var year = new Date().getFullYear();
-        var month = new Date().getMonth();
-        var day = new Date().getDate();
-
-
+//        var year = new Date().getFullYear();
+//        var month = new Date().getMonth();
+//        var day = new Date().getDate();
 
 
         $(document).ready(function() {
@@ -228,7 +258,11 @@
                 eventClick: function(calEvent, $event) {
                     //displayMessage('<strong>'+calEvent.title+'</strong><br/>ID: ' + calEvent.id + '<br/>Start: ' + calEvent.start.getHours() + '<br/>End: ' + calEvent.end);
 //                    displayMessage('<strong>'+calEvent.title+'</strong><br/>ID: ' + calEvent.id + '<br/>Start: ' + calEvent.start.getHours() + '<br/>End: ' + calEvent.end);
-                    displayMessage("<strong>{0}</strong><br/>ID: {1}<br/>Start: {2}<br/>End: {3}".format(calEvent.title, calEvent.id,  calEvent.start, calEvent.end));
+
+                    //var button = "<a data-toggle=\"modal\" href=\""+editurl+"\" data-target=\"#editmodal\" class=\"btn btn-default\">Edit</a>";
+
+                    displayMessage("{0}<br/>ID: {1}<br/>Start: {2}<br/>End: {3}<br/>".format(calEvent.title, calEvent.id,  calEvent.start, calEvent.end));
+                    addHandleModalJS(calEvent.id);
                 },
 //                eventMouseover: function(calEvent, $event) {
 //                    displayMessage('<strong>Mouseover Event</strong><br/>Start: ' + calEvent.start + '<br/>End: ' + calEvent.end);
@@ -248,11 +282,95 @@
             });
 
             function displayMessage(message) {
-                $('#message').html(message).fadeIn();
+                $('#messageData').html(message);
+//                $('#message').html(message).fadeIn();
+                $('#message').fadeIn();
             }
 
-            $('<div id="message" class="ui-corner-all"></div>').prependTo($('body'));
+
+
+
+//            $('<div id="message" class="ui-corner-all"></div>').prependTo($('body'));
         });
 
+
+        // ======================
+        // modal
+
+        $('[data-toggle="modal"]').click(function(e) {
+            e.preventDefault();
+            if($('#editmodal').attr('aria-hidden'))
+            {
+                var url = $(this).attr('href');
+                if (typeof url !== 'undefined' && url.indexOf('#') == 0)
+                {
+                    $(url).modal('open');
+                } else {
+                    $.get(url, function(data){
+                        $('#editmodal').html(data);
+                    });
+//                            .success(function(){
+//                        $('input:text:visible:first').focus();
+//                    });
+                }
+            }
+
+//                if($('#confirm-delete').attr('aria-hidden'))
+//                {
+//                    $('#confirm-delete-modal-body').html("dupa");
+//                }
+        });
+
+        $('#confirm-delete').on('show.bs.modal', function(e) {
+//            $(this).find('.btn-ok').attr('href', $(e.relatedTarget).data('href'));
+            $(this).find('.btn-ok').click(function(e2){
+                e.preventDefault();
+
+                $.ajax({
+                    type: "POST",
+                    url: $(e.relatedTarget).data('href'),
+                })
+                        .done(function (data) {
+//                                if (typeof data.message !== 'undefined') {
+//                                    alert(data.message);
+//                                }
+                            $('#confirm-delete').modal('hide');
+                            $("#message").fadeOut();
+                            $('#calendar').weekCalendar('refresh');
+                        })
+                        .fail(function (jqXHR, textStatus, errorThrown) {
+//                                if (typeof jqXHR.responseJSON !== 'undefined') {
+//                                    if (jqXHR.responseJSON.hasOwnProperty('form')) {
+//                                        $('#form_body').html(jqXHR.responseJSON.form);
+//                                    }
+//
+//                                    $('.form_error').html(jqXHR.responseJSON.message);
+//
+//                                } else {
+                            alert(errorThrown);
+//                                }
+
+                        });
+            });
+        });
+
+
+        function addHandleModalJS(id) {
+            var editurl = "{{ path('show_edit', {'id': 'idToPut'}) }}";
+            editurl = editurl.replace("idToPut", id);
+            $("#editmodalbtnedit").attr("href", editurl);
+
+            var deleteurl = "{{ path('show_delete', {'id': 'idToPut'}) }}";
+            deleteurl = deleteurl.replace("idToPut", id);
+            $("#editmodalbtndelete").attr("data-href", deleteurl);
+        }
+
+        //================
+        $("#messageCloseButton").click(function() {
+            $("#message").fadeOut();
+        });
+
+
     </script>
+        {% endif %}
 {% endblock %}
