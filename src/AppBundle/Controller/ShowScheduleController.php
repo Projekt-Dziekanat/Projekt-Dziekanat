@@ -48,7 +48,7 @@ class ShowScheduleController extends Controller {
                 'id' => $t->getId(),
                 'start' => date('c', $t->getStartTime()->setDate(2007, 1, $t->getDayOfWeek())->getTimestamp()),
                 'end' => date('c', $t->getEndTime()->setDate(2007, 1, $t->getDayOfWeek())->getTimestamp()),
-                'title' => $t->getAddSubject()->getName().'<br/>'.
+                'title' => '<b>'.$t->getAddSubject()->getName().'</b><br/>'.
                     $t->getAddLecturer()->getFirstName().' '.$t->getAddLecturer()->getLastName().'<br>'.
                     $t->getAddGroup()->getName().'<br/>'.
                     $t->getAddClass()->getName()
