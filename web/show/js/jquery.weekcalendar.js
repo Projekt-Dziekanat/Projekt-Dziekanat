@@ -315,6 +315,14 @@
       },
 
       /*
+       * Sets new data for calendar
+       * BB
+       */
+      setData: function(data) {
+        this.options.data = data;
+      },
+
+      /*
        * Clear all events currently loaded into the calendar
        */
       clear: function() {
