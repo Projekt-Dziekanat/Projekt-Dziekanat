@@ -13,10 +13,14 @@ use AppBundle\Entity\AddLecturer;
 use AppBundle\Entity\Timetable;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TimeType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,7 +36,6 @@ class ShowScheduleController extends Controller {
     /**
      * @Route("/eventsjson/{slug}/{id}", name="show_eventsjson", requirements={"slug": "group|classroom|lecturer"})
      */
-    // TODO bez domyślnego?
 
     public function getEventsFiltered(Request $request, $slug = null, $id = null) {
         switch ($slug) {
@@ -46,7 +49,8 @@ class ShowScheduleController extends Controller {
                 $timetable = $this->getDoctrine()->getRepository('AppBundle:Timetable')->findBy(['addLecturer' => $id]);
                 break;
             default:
-                $timetable = $this->getDoctrine()->getRepository('AppBundle:Timetable')->findAll();
+                $timetable = [];
+                //$this->getDoctrine()->getRepository('AppBundle:Timetable')->findAll();
         }
 
         $return = array();
@@ -129,9 +133,63 @@ class ShowScheduleController extends Controller {
      * @Route("/{slug}/{id}", name="show_root", requirements={"slug": "group|classroom|lecturer"})
      */
     public function indexAction(Request $request, $slug = null, $id = null) {
+        //http://symfony.com/doc/current/form/dynamic_form_modification.html#form-events-submitted-data
+//        $form = $this->createForm(TimetableViewType::class);
+//        $form->handleRequest($request);
+
+        $builder = $this->createFormBuilder()
+            ->add('type', ChoiceType::class, array('choices'  => array(
+                'Classroom' => 'classroom',
+                'Group' => 'group',
+                'Lecturer' => 'lecturer'),
+                'placeholder' => '',
+                'data' => $slug,
+                'label' => 'Show timetable for:'));
+
+        if ($slug !== null) {
+            switch ($slug) {
+                case 'classroom':
+                    $builder->add('options', EntityType::class, array(
+                        'class'       => 'AppBundle:AddClass',
+                        'placeholder' => '',
+                        'choice_label' => 'name',
+                        'label' => false,
+                        'data' => $id === null ? '' : $this->getDoctrine()->getRepository('AppBundle:AddClass')->find($id)
+                    ));
+                    break;
+                case 'group':
+                    $builder->add('options', EntityType::class, array(
+                        'class'       => 'AppBundle:AddGroup',
+                        'placeholder' => '',
+                        'choice_label' => 'name',
+                        'label' => false,
+                        'data' => $id === null ? '' : $this->getDoctrine()->getRepository('AppBundle:AddGroup')->find($id)
+                    ));
+                    break;
+                case 'lecturer':
+                    $builder->add('options', EntityType::class, array(
+                        'class'       => 'AppBundle:AddLecturer',
+                        'placeholder' => '',
+                        'choice_label' => function (AddLecturer $lecturer) {return $lecturer->getFirstName()." ".$lecturer->getLastName();},
+                        'label' => false,
+                        'data' => $id === null ? '' : $this->getDoctrine()->getRepository('AppBundle:AddLecturer')->find($id)
+                    ));
+                    break;
+                default:
+            }
+
+        }
+
+//            ->setAction($this->generateUrl('show_root'))
+
+
+        $form = $builder->getForm();
+
+
+
         // replace this example code with whatever you need
 //        $this->redirectToRoute('');
-        return $this->render('io/show_schedule.html.twig', ['slug' => $slug, 'id' => $id]);
+        return $this->render('io/show_schedule.html.twig', ['slug' => $slug, 'id' => $id, 'form' => $form->createView()]);
     }
 
     /**
@@ -204,6 +262,58 @@ class ShowScheduleController extends Controller {
 
 
 }
+//
+//class TimetableViewType extends AbstractType  {
+//    public function buildForm(FormBuilderInterface $builder, array $options) {
+//        $builder
+//            ->add('type', ChoiceType::class, array('choices'  => array(
+//                'Classroom' => 1,
+//                'Group' => 2,
+//                'Lecturer' => 3),
+//                'placeholder' => ''));
+//
+////            ->setAction($this->generateUrl('show_root'))
+//
+//        $builder->addEventListener(
+//            FormEvents::PRE_SET_DATA,
+//            function (FormEvent $event) {
+//                $form = $event->getForm();
+//
+//                // this would be your entity, i.e. SportMeetup
+//                $data = $event->getData();
+//                //$aa = $event->getForm()->get('type');
+//
+////                    var_dump($data);
+////                    $data->getType();
+//
+//                switch ($data) {
+//                    case 1:
+//                        $form->add('test', TextType::class, array('data' => '1'));
+//                        //$options =  $this->getDoctrine()->getRepository('AppBundle:AddClass')->findAll();
+//                        $form->add('options', EntityType::class, array(
+//                            'class'       => 'AppBundle:AddClass',
+//                            'placeholder' => '',
+//                            'choice_label' => 'name',
+//                        ));
+//                        break;
+//                    case 2:
+//                        $form->add('test', TextType::class, array('data' => '2'));
+//                        break;
+//                    case 3:
+//                        $form->add('test', TextType::class, array('data' => '3'));
+//                        break;
+//                    case NULL:
+//                        $form->add('test', TextType::class, array('data' => 'null'));
+//                        break;
+//                    default:
+//                        $form->add('test', TextType::class, array('data' => 'default'));
+//                }
+//
+//            }
+//        );
+//    }
+//}
+
 //abstract class DaysOfWeek  {
 //    const Sunday = 7;
 //    const Monday = 1;
